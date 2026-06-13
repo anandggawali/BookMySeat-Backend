@@ -9,6 +9,9 @@ router = APIRouter(
     tags=["Trips"]
 )
 
+@router.get("")
+def get_all_trips():
+    return TripService.get_all_trips()
 
 @router.post("/search")
 def search_trips(

@@ -8,6 +8,13 @@ class TripRepository:
         return trips_collection.insert_one(trip)
 
     @staticmethod
+    def get_all_trips():
+        return list(
+            trips_collection.find(
+                {"status": "OPEN"}
+            )
+        )
+    @staticmethod
     def find_by_id(trip_id: str):
         return trips_collection.find_one(
             {"tripId": trip_id}

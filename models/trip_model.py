@@ -10,3 +10,4 @@ class Trip(BaseModel):
     fare: float
     totalSeats: int
     status: str
+

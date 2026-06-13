@@ -6,6 +6,7 @@ from fastapi import HTTPException
 
 from repositories.trip_repository import TripRepository
 from repositories.booking_repository import BookingRepository
+from repositories.user_repository import UserRepository
 
 from services.trip_service import TripService
 
@@ -103,31 +104,103 @@ class BookingService:
             "totalFare": booking["totalFare"]
         }
 
+    # @staticmethod
+    # def get_my_bookings(
+    #         user_id: str
+    # ):
+    #
+    #     bookings = (
+    #         BookingRepository.find_by_user(
+    #             user_id
+    #         )
+    #     )
+    #
+    #     return serialize_mongo_list(
+    #         bookings
+    #     )
     @staticmethod
-    def get_my_bookings(
-            user_id: str
-    ):
+    def get_my_bookings(user_id):
 
-        bookings = (
-            BookingRepository.find_by_user(
-                user_id
+        bookings = BookingRepository.find_by_user(
+            user_id
+        )
+
+        response = []
+
+        for booking in bookings:
+            trip = TripRepository.find_by_id(
+                booking["tripId"]
             )
-        )
 
-        return serialize_mongo_list(
-            bookings
-        )
+            response.append({
+
+                "bookingId": booking["bookingId"],
+
+                "tripId": booking["tripId"],
+
+                "route": trip["route"],
+
+                "date": trip["date"],
+
+                "timeSlot": trip["timeSlot"],
+
+                "fare": booking["totalFare"],
+
+                "passengerCount":
+                    booking["passengerCount"],
+
+                "gender":
+                    booking["gender"],
+
+                "bookingStatus":
+                    booking["bookingStatus"]
+            })
+
+        return response
 
     @staticmethod
     def get_all_bookings():
 
-        bookings = (
-            BookingRepository.get_all_bookings()
-        )
+        bookings = BookingRepository.get_all_bookings()
 
-        return serialize_mongo_list(
-            bookings
-        )
+        response = []
+
+        for booking in bookings:
+            trip = TripRepository.find_by_id(
+                booking["tripId"]
+            )
+
+            user = UserRepository.find_by_id(
+                booking["userId"]
+            )
+
+            response.append({
+
+                "bookingId": booking["bookingId"],
+
+                "userName": user["name"],
+
+                "tripId": booking["tripId"],
+
+                "route": trip["route"],
+
+                "date": trip["date"],
+
+                "timeSlot": trip["timeSlot"],
+
+                "fare": booking["totalFare"],
+
+                "passengerCount":
+                    booking["passengerCount"],
+
+                "gender":
+                    booking["gender"],
+
+                "bookingStatus":
+                    booking["bookingStatus"]
+            })
+
+        return response
 
     @staticmethod
     def confirm_booking(

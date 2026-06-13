@@ -121,6 +121,40 @@ class TripService:
         return response
 
     @staticmethod
+    def get_all_trips():
+
+        trips = TripRepository.get_all_trips()
+
+        response = []
+
+        for trip in trips:
+            available_seats = (
+                TripService.calculate_available_seats(
+                    trip
+                )
+            )
+
+            response.append({
+
+                "tripId": trip["tripId"],
+
+                "route": trip["route"],
+
+                "date": trip["date"],
+
+                "timeSlot": trip["timeSlot"],
+
+                "fare": trip["fare"],
+
+                "totalSeats": trip["totalSeats"],
+
+                "availableSeats": available_seats,
+
+                "status": trip["status"]
+            })
+
+        return response
+    @staticmethod
     def get_trip_by_id(trip_id):
 
         trip = TripRepository.find_by_id(
@@ -157,3 +191,4 @@ class TripService:
 
             "status": trip["status"]
         }
+
