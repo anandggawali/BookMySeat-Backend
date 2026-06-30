@@ -25,7 +25,7 @@ class BookingService:
         trip = TripRepository.find_by_id(
             request.tripId
         )
-
+        user = UserRepository.find_by_id(user_id)
         if not trip:
             raise HTTPException(
                 status_code=404,
@@ -80,6 +80,10 @@ class BookingService:
 
             "userId": user_id,
 
+            "mobileNumber":
+                user.get("phoneNo", "")
+                if user else "",
+
             "passengerCount": request.passengerCount,
 
             "gender": request.gender,
@@ -121,9 +125,7 @@ class BookingService:
     @staticmethod
     def get_my_bookings(user_id):
 
-        bookings = BookingRepository.find_by_user(
-            user_id
-        )
+        bookings = BookingRepository.find_by_user(user_id)
 
         response = []
 
@@ -138,13 +140,20 @@ class BookingService:
 
                 "tripId": booking["tripId"],
 
-                "route": trip["route"],
+                "route":
+                    trip["route"]
+                    if trip else "Trip Deleted",
 
-                "date": trip["date"],
+                "date":
+                    trip["date"]
+                    if trip else "-",
 
-                "timeSlot": trip["timeSlot"],
+                "timeSlot":
+                    trip["timeSlot"]
+                    if trip else "-",
 
-                "fare": booking["totalFare"],
+                "fare":
+                    booking.get("totalFare", 0),
 
                 "passengerCount":
                     booking["passengerCount"],
@@ -167,37 +176,50 @@ class BookingService:
 
         for booking in bookings:
             trip = TripRepository.find_by_id(
-                booking["tripId"]
+                booking.get("tripId")
             )
 
             user = UserRepository.find_by_id(
-                booking["userId"]
+                booking.get("userId")
             )
 
             response.append({
 
-                "bookingId": booking["bookingId"],
+                "bookingId": booking.get("bookingId"),
 
-                "userName": user["name"],
+                "userName":
+                    user.get("name", "Unknown User")
+                    if user else "Unknown User",
 
-                "tripId": booking["tripId"],
+                "mobileNumber":
+                    user.get("phoneNo", "")
+                    if user else "",
 
-                "route": trip["route"],
+                "tripId": booking.get("tripId"),
 
-                "date": trip["date"],
+                "route":
+                    trip.get("route", "")
+                    if trip else "",
 
-                "timeSlot": trip["timeSlot"],
+                "date":
+                    trip.get("date", "")
+                    if trip else "",
 
-                "fare": booking["totalFare"],
+                "timeSlot":
+                    trip.get("timeSlot", "")
+                    if trip else "",
+
+                "fare":
+                    booking.get("totalFare", 0),
 
                 "passengerCount":
-                    booking["passengerCount"],
+                    booking.get("passengerCount", 0),
 
                 "gender":
-                    booking["gender"],
+                    booking.get("gender", ""),
 
                 "bookingStatus":
-                    booking["bookingStatus"]
+                    booking.get("bookingStatus", "")
             })
 
         return response
