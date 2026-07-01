@@ -212,6 +212,9 @@ class BookingService:
                 "fare":
                     booking.get("totalFare", 0),
 
+                "note":
+                    booking.get("note", 0),
+
                 "passengerCount":
                     booking.get("passengerCount", 0),
 
