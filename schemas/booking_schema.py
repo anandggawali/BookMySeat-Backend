@@ -1,11 +1,11 @@
 from pydantic import BaseModel
-
+from typing import Optional
 
 class CreateBookingRequest(BaseModel):
     tripId: str
     passengerCount: int
     gender: str
-    note: str | None = None
+    note: Optional[str] = None
 
 
 class BookingResponse(BaseModel):
@@ -18,4 +18,4 @@ class ConfirmBookingResponse(BaseModel):
     message: str
 
 class RejectBookingRequest(BaseModel):
-    reason: str
+    reason: Optional[str] = None
