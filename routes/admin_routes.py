@@ -3,6 +3,7 @@ from fastapi import Depends
 from fastapi import HTTPException
 
 from dependencies.auth_dependency import get_current_user
+from schemas.booking_schema import RejectBookingRequest
 
 from schemas.trip_schema import CreateTripRequest
 
@@ -66,11 +67,13 @@ def confirm_booking(
 )
 def reject_booking(
         booking_id: str,
+        request: RejectBookingRequest,
         current_user=Depends(get_current_user)
 ):
 
     validate_admin(current_user)
 
     return BookingService.reject_booking(
-        booking_id
+        booking_id,
+        request.reason
     )

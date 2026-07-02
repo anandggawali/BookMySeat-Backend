@@ -162,7 +162,10 @@ class BookingService:
                     booking["gender"],
 
                 "bookingStatus":
-                    booking["bookingStatus"]
+                    booking["bookingStatus"],
+
+                "rejectionReason":
+                    booking.get("rejectionReason", "")
             })
 
         return response
@@ -222,7 +225,10 @@ class BookingService:
                     booking.get("gender", ""),
 
                 "bookingStatus":
-                    booking.get("bookingStatus", "")
+                    booking.get("bookingStatus", ""),
+
+                "rejectionReason":
+                    booking.get("rejectionReason", "")
             })
 
         return response
@@ -298,7 +304,8 @@ class BookingService:
 
     @staticmethod
     def reject_booking(
-            booking_id
+            booking_id,
+            reason
     ):
 
         booking = (
@@ -325,7 +332,8 @@ class BookingService:
             },
             {
                 "$set": {
-                    "bookingStatus": "REJECTED"
+                    "bookingStatus": "REJECTED",
+                    "rejectionReason": reason
                 }
             }
         )

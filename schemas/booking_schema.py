@@ -16,3 +16,6 @@ class BookingResponse(BaseModel):
 
 class ConfirmBookingResponse(BaseModel):
     message: str
+
+class RejectBookingRequest(BaseModel):
+    reason: str
