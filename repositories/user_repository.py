@@ -18,3 +18,27 @@ class UserRepository:
         return users_collection.find_one(
             {"userId": user_id}
         )
+
+    @staticmethod
+    def save_fcm_token(
+            user_id,
+            token
+    ):
+        print("========== SAVE FCM ==========")
+        print("User ID :", user_id)
+        print("Token :", token)
+
+        result = users_collection.update_one(
+            {
+                "userId": user_id
+            },
+            {
+                "$set": {
+                    "fcmToken": token
+                }
+            }
+        )
+
+        print("Matched :", result.matched_count)
+        print("Modified:", result.modified_count)
+        

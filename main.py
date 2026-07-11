@@ -18,6 +18,11 @@ app.include_router(booking_router)
 app.include_router(admin_router)
 app.include_router(user_router)
 app.include_router(route_router)
+# app.include_router(
+#     user_router,
+#     prefix="/api/users",
+#     tags=["Users"]
+# )
 
 from core.database import db
 
