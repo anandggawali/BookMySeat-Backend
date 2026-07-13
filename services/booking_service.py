@@ -7,6 +7,8 @@ from fastapi import HTTPException
 from repositories.trip_repository import TripRepository
 from repositories.booking_repository import BookingRepository
 from repositories.user_repository import UserRepository
+from services.app_notification_service import AppNotificationService
+from services.notification_service import NotificationService
 
 from services.trip_service import TripService
 
@@ -237,6 +239,7 @@ class BookingService:
     def confirm_booking(
             booking_id
     ):
+        
 
         booking = (
             BookingRepository.find_by_id(
@@ -249,6 +252,7 @@ class BookingService:
                 status_code=404,
                 detail="Booking not found"
             )
+        user = UserRepository.find_by_id(booking["userId"])
 
         if booking["bookingStatus"] == "CONFIRMED":
             raise HTTPException(
@@ -297,6 +301,25 @@ class BookingService:
                 }
             }
         )
+        print("========== CALLING APP NOTIFICATION ==========")
+        print("User:", booking["userId"])
+        print("Trip:", trip["route"])
+        from services.app_notification_service import AppNotificationService
+        AppNotificationService.create_notification(
+
+            user_id=booking["userId"],
+
+            title="Booking Confirmed",
+
+            body=f"Your booking for {trip['route']} on {trip['date']} at {trip['timeSlot']} has been confirmed.",
+
+            type="BOOKING_CONFIRMED",
+
+            click_action="OPEN_BOOKING",
+
+            color="#4CAF50"
+
+        )
 
         return {
             "message": "Booking confirmed successfully"
@@ -319,7 +342,9 @@ class BookingService:
                 status_code=404,
                 detail="Booking not found"
             )
-
+        user = UserRepository.find_by_id(
+            booking["userId"]
+        )
         if booking["bookingStatus"] == "CONFIRMED":
             raise HTTPException(
                 status_code=400,
@@ -336,6 +361,25 @@ class BookingService:
                     "rejectionReason": reason
                 }
             }
+        )
+        trip = TripRepository.find_by_id(
+            booking["tripId"]
+        )
+
+        AppNotificationService.create_notification(
+
+            user_id=booking["userId"],
+
+            title="Booking Rejected",
+
+            body=f"Your booking for {trip['route']} has been rejected.\nReason: {reason}",
+
+            type="BOOKING_REJECTED",
+
+            click_action="OPEN_BOOKING",
+
+            color="#F44336"
+
         )
 
         return {

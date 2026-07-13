@@ -18,3 +18,5 @@ trips_collection = db["trips"]
 bookings_collection = db["bookings"]
 
 routes_collection = db["routes"]
+
+notifications_collection = db["notifications"]
