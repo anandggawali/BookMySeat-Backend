@@ -55,3 +55,20 @@ class NotificationRepository:
             }
 
         )
+
+    @staticmethod
+    def mark_all_as_read(user_id):
+        notifications_collection.update_many(
+
+            {
+                "userId": user_id,
+                "isRead": False
+            },
+
+            {
+                "$set": {
+                    "isRead": True
+                }
+            }
+
+        )
