@@ -7,3 +7,4 @@ class User(BaseModel):
     phoneNo: str
     password: str
     role: str
+    email: str | None = None

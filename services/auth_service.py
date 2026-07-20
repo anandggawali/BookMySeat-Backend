@@ -27,6 +27,7 @@ class AuthService:
             "userId": str(uuid.uuid4()),
             "name": request.name,
             "phoneNo": request.phoneNo,
+            "email": request.email,
             "password": hash_password(request.password),
             "role": "MEMBER"
         }
@@ -67,5 +68,8 @@ class AuthService:
         return {
             "token": token,
             "userId": user["userId"],
-            "role": user["role"]
+            "role": user["role"],
+            "name": user["name"],
+            "phoneNo": user["phoneNo"],
+            "email": user.get("email", "")
         }
