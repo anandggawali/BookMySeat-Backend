@@ -25,5 +25,5 @@ class LoginResponse(BaseModel):
 
 class UpdateProfileRequest(BaseModel):
     name: str
-    phoneNo: str
+    # phoneNo: str
     email: EmailStr
