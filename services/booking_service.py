@@ -55,19 +55,18 @@ class BookingService:
                 detail="Booking allowed only within next 3 days"
             )
 
-        # Available seat validation
-        available = (
-            TripService
-            .calculate_available_seats(
-                trip
-            )
-        )
+        # Calculate available seats (for information only)
+        available = TripService.calculate_available_seats(trip)
 
-        if request.passengerCount > available:
-            raise HTTPException(
-                status_code=400,
-                detail="Not enough seats available"
-            )
+        # Overbooking is allowed.
+        # No validation here. Admin can arrange an additional vehicle if required.
+
+
+        # if request.passengerCount > available:
+        #     raise HTTPException(
+        #         status_code=400,
+        #         detail="Not enough seats available"
+        #     )
 
         total_fare = (
                 trip["fare"]
@@ -94,7 +93,12 @@ class BookingService:
 
             "totalFare": total_fare,
 
-            "bookingStatus": "PENDING"
+            "availableSeatsAtBooking": available,
+
+            "bookingStatus": "PENDING",
+
+            "isOverBooking": available < request.passengerCount
+
         }
 
         BookingRepository.save(
