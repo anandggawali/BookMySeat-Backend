@@ -128,11 +128,11 @@ class TripService:
         response = []
 
         for trip in trips:
-            available_seats = (
-                TripService.calculate_available_seats(
-                    trip
-                )
-            )
+            available_seats = TripService.calculate_available_seats(trip)
+
+            booked_passengers = trip["totalSeats"] - available_seats
+
+            over_booked = max(0, booked_passengers - trip["totalSeats"])
 
             response.append({
 
@@ -148,7 +148,13 @@ class TripService:
 
                 "totalSeats": trip["totalSeats"],
 
+                "bookedPassengers": booked_passengers,
+
                 "availableSeats": available_seats,
+
+                "overBookedSeats": over_booked,
+
+                "isOverBooked": over_booked > 0,
 
                 "status": trip["status"]
             })
@@ -167,11 +173,11 @@ class TripService:
                 detail="Trip not found"
             )
 
-        available_seats = (
-            TripService.calculate_available_seats(
-                trip
-            )
-        )
+        available_seats = TripService.calculate_available_seats(trip)
+
+        booked_passengers = trip["totalSeats"] - available_seats
+
+        over_booked = max(0, booked_passengers - trip["totalSeats"])
 
         return {
 
@@ -187,7 +193,13 @@ class TripService:
 
             "totalSeats": trip["totalSeats"],
 
+            "bookedPassengers": booked_passengers,
+
             "availableSeats": available_seats,
+
+            "overBookedSeats": over_booked,
+
+            "isOverBooked": over_booked > 0,
 
             "status": trip["status"]
         }
