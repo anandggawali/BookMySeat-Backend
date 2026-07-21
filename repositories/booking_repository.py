@@ -47,3 +47,11 @@ class BookingRepository:
                 "bookingStatus": "CONFIRMED"
             })
         )
+
+    @staticmethod
+    def get_bookings_by_trip(trip_id):
+        return list(
+            bookings_collection.find({
+                "tripId": trip_id
+            })
+        )

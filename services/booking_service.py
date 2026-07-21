@@ -184,12 +184,32 @@ class BookingService:
         response = []
 
         for booking in bookings:
+
             trip = TripRepository.find_by_id(
                 booking.get("tripId")
             )
 
             user = UserRepository.find_by_id(
                 booking.get("userId")
+            )
+
+            total_seats = trip.get("totalSeats", 0) if trip else 0
+
+            booked_passengers = 0
+
+            if trip:
+                trip_bookings = BookingRepository.get_bookings_by_trip(
+                    booking.get("tripId")
+                )
+
+                booked_passengers = sum(
+                    b.get("passengerCount", 0)
+                    for b in trip_bookings
+                )
+
+            over_booked = max(
+                0,
+                booked_passengers - total_seats
             )
 
             response.append({
@@ -222,7 +242,7 @@ class BookingService:
                     booking.get("totalFare", 0),
 
                 "note":
-                    booking.get("note", 0),
+                    booking.get("note", ""),
 
                 "passengerCount":
                     booking.get("passengerCount", 0),
@@ -234,7 +254,17 @@ class BookingService:
                     booking.get("bookingStatus", ""),
 
                 "rejectionReason":
-                    booking.get("rejectionReason", "")
+                    booking.get("rejectionReason", ""),
+
+                "totalSeats": total_seats,
+
+                "bookedPassengers": booked_passengers,
+
+                "availableSeats": total_seats - booked_passengers,
+
+                "overBookedSeats": over_booked,
+
+                "isOverBooked": over_booked > 0
             })
 
         return response
