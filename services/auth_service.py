@@ -59,11 +59,17 @@ class AuthService:
                 status_code=401,
                 detail="Invalid credentials"
             )
+        UserRepository.update_device(
+            user["userId"],
+            request.deviceId
+        )
 
         token = create_access_token({
             "userId": user["userId"],
-            "role": user["role"]
+            "role": user["role"],
+            "deviceId": request.deviceId
         })
+
 
         return {
             "token": token,

@@ -30,7 +30,7 @@ def create_access_token(data: dict):
 
     payload["exp"] = (
         datetime.utcnow()
-        + timedelta(days=1)
+        + timedelta(days=90)
     )
 
     return jwt.encode(

@@ -97,3 +97,14 @@ class UserRepository:
             }
 
         )
+
+    @staticmethod
+    def update_device(user_id: str, device_id: str):
+        users_collection.update_one(
+            {"userId": user_id},
+            {
+                "$set": {
+                    "deviceId": device_id
+                }
+            }
+        )

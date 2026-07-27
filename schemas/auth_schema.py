@@ -11,7 +11,7 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     phoneNo: str
     password: str
-
+    deviceId: str
 
 
 class LoginResponse(BaseModel):
