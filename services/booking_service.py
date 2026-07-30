@@ -104,6 +104,29 @@ class BookingService:
         BookingRepository.save(
             booking
         )
+        admins = UserRepository.get_admins()
+
+        for admin in admins:
+            AppNotificationService.create_notification(
+
+                user_id=admin["userId"],
+
+                title="New Booking Request",
+
+                body=(
+                    f"{user['name']}\n"
+                    f"{trip['route']}\n"
+                    f"{trip['date']} • {trip['timeSlot']}\n"
+                    f"Passengers: {request.passengerCount}"
+                ),
+
+                type="BOOKING",
+
+                click_action="MANAGE_BOOKINGS",
+
+                color="#2962FF"
+
+            )
 
         return {
 
@@ -113,6 +136,9 @@ class BookingService:
 
             "totalFare": booking["totalFare"]
         }
+
+
+
 
     # @staticmethod
     # def get_my_bookings(

@@ -108,3 +108,13 @@ class UserRepository:
                 }
             }
         )
+
+    @staticmethod
+    def get_admins():
+        return list(
+            users_collection.find(
+                {
+                    "role": "ADMIN"
+                }
+            )
+        )
