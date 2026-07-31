@@ -40,6 +40,7 @@ def get_current_user(
         )
 
     payload = verify_token(token)
+    print("Received Token:", token)
 
     print("JWT Payload:", payload)
 

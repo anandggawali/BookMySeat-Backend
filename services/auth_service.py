@@ -79,3 +79,37 @@ class AuthService:
             "phoneNo": user["phoneNo"],
             "email": user.get("email", "")
         }
+
+    @staticmethod
+    def change_password(current_user, request):
+
+        user = UserRepository.find_by_id(
+            current_user["userId"]
+        )
+
+        if not user:
+            raise HTTPException(
+                status_code=404,
+                detail="User not found"
+            )
+
+        if not verify_password(
+                request.oldPassword,
+                user["password"]
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Old password is incorrect"
+            )
+
+        UserRepository.update_password(
+
+            current_user["userId"],
+
+            hash_password(request.newPassword)
+
+        )
+
+        return {
+            "message": "Password changed successfully"
+        }

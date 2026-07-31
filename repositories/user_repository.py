@@ -118,3 +118,18 @@ class UserRepository:
                 }
             )
         )
+
+    @staticmethod
+    def update_password(user_id: str, hashed_password: str):
+        users_collection.update_one(
+
+            {
+                "userId": user_id
+            },
+            {
+                "$set": {
+                    "password": hashed_password
+                }
+            }
+
+        )

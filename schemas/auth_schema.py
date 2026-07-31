@@ -27,3 +27,7 @@ class UpdateProfileRequest(BaseModel):
     name: str
     # phoneNo: str
     email: EmailStr
+
+class ChangePasswordRequest(BaseModel):
+    oldPassword: str
+    newPassword: str
