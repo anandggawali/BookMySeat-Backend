@@ -1,5 +1,56 @@
 from core.database import users_collection
+from datetime import datetime
 
+
+@staticmethod
+def save_otp(email: str, otp: str):
+
+    users_collection.update_one(
+        {"email": email},
+        {
+            "$set": {
+                "otp": otp,
+                "otpExpiry": datetime.utcnow()
+            }
+        }
+    )
+
+
+@staticmethod
+def verify_otp(email: str, otp: str):
+
+    user = users_collection.find_one(
+        {
+            "email": email,
+            "otp": otp
+        }
+    )
+
+    return user
+
+
+@staticmethod
+def clear_otp(email: str):
+
+    users_collection.update_one(
+        {"email": email},
+        {
+            "$set": {
+                "otp": None,
+                "otpExpiry": None
+            }
+        }
+    )
+
+
+@staticmethod
+def find_by_email(email: str):
+
+    return users_collection.find_one(
+        {
+            "email": email
+        }
+    )
 
 class UserRepository:
 
@@ -121,15 +172,66 @@ class UserRepository:
 
     @staticmethod
     def update_password(user_id: str, hashed_password: str):
-        users_collection.update_one(
+        return users_collection.update_one(
 
             {
                 "userId": user_id
             },
+
             {
                 "$set": {
-                    "password": hashed_password
+                    "password": hashed_password,
+                    "otp": None,
+                    "otpExpiry": None,
+                    "otpVerified": False
                 }
             }
 
         )
+
+
+    @staticmethod
+    def save_otp(email: str, otp: str):
+        users_collection.update_one(
+            {"email": email},
+            {
+                "$set": {
+                    "otp": otp,
+                    "otpExpiry": datetime.utcnow()
+                }
+            }
+        )
+
+    @staticmethod
+    def verify_otp(email: str, otp: str):
+        user = users_collection.find_one(
+            {
+                "email": email,
+                "otp": otp
+            }
+        )
+
+        return user
+
+    @staticmethod
+    def clear_otp(email: str):
+        users_collection.update_one(
+            {"email": email},
+            {
+                "$set": {
+                    "otp": None,
+                    "otpExpiry": None
+                }
+            }
+        )
+
+    @staticmethod
+    def find_by_email(email: str):
+        return users_collection.find_one(
+            {
+                "email": email
+            }
+        )
+
+
+

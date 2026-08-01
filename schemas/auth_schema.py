@@ -31,3 +31,17 @@ class UpdateProfileRequest(BaseModel):
 class ChangePasswordRequest(BaseModel):
     oldPassword: str
     newPassword: str
+
+class RegisterOtpRequest(BaseModel):
+    name: str
+    phoneNo: str
+    email: EmailStr
+    password: str
+
+
+class RegisterVerifyRequest(BaseModel):
+    name: str
+    phoneNo: str
+    email: EmailStr
+    password: str
+    otp: str

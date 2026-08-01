@@ -74,3 +74,20 @@ def test_db():
     return {
         "message": "Inserted"
     }
+
+from fastapi import APIRouter
+from services.email_service import EmailService
+
+router = APIRouter()
+
+@router.get("/send-test-mail")
+def send_test_mail():
+
+    EmailService.send_otp(
+        "anandggawali2001@gmail.com",
+        "123456"
+    )
+
+    return {
+        "message": "Email Sent"
+    }
