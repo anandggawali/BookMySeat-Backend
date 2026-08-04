@@ -34,11 +34,29 @@ class BookingService:
                 detail="Trip not found"
             )
 
-        # Passenger validation
-        if request.passengerCount <= 0:
+        # Ride / Parcel validation
+
+        if request.bookingType == "RIDE":
+
+            if request.passengerCount <= 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Passenger count must be greater than 0"
+                )
+
+        elif request.bookingType == "PARCEL":
+
+            if request.parcelCount <= 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Parcel count must be greater than 0"
+                )
+
+        else:
+
             raise HTTPException(
                 status_code=400,
-                detail="Passenger count must be greater than 0"
+                detail="Invalid booking type"
             )
 
         # Booking allowed only within next 3 days
@@ -68,10 +86,13 @@ class BookingService:
         #         detail="Not enough seats available"
         #     )
 
-        total_fare = (
-                trip["fare"]
-                * request.passengerCount
+        quantity = (
+            request.passengerCount
+            if request.bookingType == "RIDE"
+            else request.parcelCount
         )
+
+        total_fare = trip["fare"] * quantity
 
         booking = {
 
@@ -85,10 +106,18 @@ class BookingService:
                 user.get("phoneNo", "")
                 if user else "",
 
-            "passengerCount": request.passengerCount,
+            "bookingType": request.bookingType,
 
+            # Ride
+            "passengerCount": request.passengerCount,
             "gender": request.gender,
 
+            # Parcel
+            "parcelCount": request.parcelCount,
+            "parcelType": request.parcelType,
+            "parcelWeight": request.parcelWeight,
+
+            # Common
             "note": request.note,
 
             "totalFare": total_fare,
@@ -97,7 +126,7 @@ class BookingService:
 
             "bookingStatus": "PENDING",
 
-            "isOverBooking": available < request.passengerCount
+            "isOverBooking": available < quantity
 
         }
 
@@ -118,6 +147,9 @@ class BookingService:
                     f"{trip['route']}\n"
                     f"{trip['date']} • {trip['timeSlot']}\n"
                     f"Passengers: {request.passengerCount}"
+                    if request.bookingType == "RIDE"
+                    else f"Parcels: {request.parcelCount}"
+
                 ),
 
                 type="BOOKING",
@@ -186,12 +218,25 @@ class BookingService:
 
                 "fare":
                     booking.get("totalFare", 0),
+                "bookingType":
+                    booking.get("bookingType", "RIDE"),
 
+                # Ride
                 "passengerCount":
-                    booking["passengerCount"],
+                    booking.get("passengerCount", 0),
 
                 "gender":
-                    booking["gender"],
+                    booking.get("gender", ""),
+
+                # Parcel
+                "parcelCount":
+                    booking.get("parcelCount", 0),
+
+                "parcelType":
+                    booking.get("parcelType", ""),
+
+                "parcelWeight":
+                    booking.get("parcelWeight", 0),
 
                 "bookingStatus":
                     booking["bookingStatus"],
@@ -230,6 +275,8 @@ class BookingService:
 
                 booked_passengers = sum(
                     b.get("passengerCount", 0)
+                    if b.get("bookingType", "RIDE") == "RIDE"
+                    else b.get("parcelCount", 0)
                     for b in trip_bookings
                 )
 
@@ -270,11 +317,25 @@ class BookingService:
                 "note":
                     booking.get("note", ""),
 
+                "bookingType":
+                    booking.get("bookingType", "RIDE"),
+
+                # Ride
                 "passengerCount":
                     booking.get("passengerCount", 0),
 
                 "gender":
                     booking.get("gender", ""),
+
+                # Parcel
+                "parcelCount":
+                    booking.get("parcelCount", 0),
+
+                "parcelType":
+                    booking.get("parcelType", ""),
+
+                "parcelWeight":
+                    booking.get("parcelWeight", 0),
 
                 "bookingStatus":
                     booking.get("bookingStatus", ""),
