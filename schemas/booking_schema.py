@@ -3,9 +3,17 @@ from typing import Optional
 
 class CreateBookingRequest(BaseModel):
     tripId: str
-    passengerCount: int
-    gender: str
-    note: Optional[str] = None
+    passengerCount: int = 0
+    gender: str = ""
+    note: str = ""
+
+    # Booking type
+    bookingType: str = "RIDE"
+
+    # Parcel details
+    parcelCount: int = 0
+    parcelType: str = ""
+    parcelWeight: str = ""
 
 
 class BookingResponse(BaseModel):
