@@ -10,6 +10,7 @@ from routes.route_routes import router as route_router
 from routes.test_routes import router as test_router
 from routes.notification_routes import router as notification_router
 from routes.config_routes import router as configuration_router
+from routes.parcel_routes import router as parcel_router
 
 app = FastAPI(
     title="Book My Seat API",
@@ -25,6 +26,7 @@ app.include_router(route_router)
 app.include_router(test_router)
 app.include_router(notification_router)
 app.include_router(configuration_router)
+app.include_router(parcel_router)
 # app.include_router(
 #     user_router,
 #     prefix="/api/users",
@@ -42,3 +44,5 @@ def home():
     return {
         "message": "Book My Seat Backend Running"
     }
+for route in app.routes:
+    print("REGISTERED ROUTE:", route.path)

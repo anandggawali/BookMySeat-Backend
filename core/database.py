@@ -21,6 +21,11 @@ routes_collection = db["routes"]
 
 notifications_collection = db["notifications"]
 
+weight_categories_collection = db["weight_categories"]
+
+parcel_fares_collection = db["parcel_fares"]
+
+parcels_collection = db["parcels"]
 # config_collection = db["configuration"]
 #
 # rejection_collection = db["reject_reason"]
