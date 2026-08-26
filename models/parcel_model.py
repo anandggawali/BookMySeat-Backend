@@ -62,3 +62,8 @@ class Parcel(BaseModel):
     createdAt: str
 
     updatedAt: Optional[str] = None
+
+class ParcelRescheduleRequest(BaseModel):
+
+    tripId: str
+    agreedFare: float

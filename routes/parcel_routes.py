@@ -14,7 +14,7 @@ from models.parcel_fare_model import (
 from models.parcel_model import (
     ParcelCreate,
     ParcelAllocateRequest,
-    ParcelRejectRequest
+    ParcelRejectRequest, ParcelRescheduleRequest
 )
 
 from services.parcel_service import ParcelService
@@ -210,4 +210,31 @@ def mark_delivered(
    return ParcelService.mark_delivered(
 
         parcel_id
+    )
+
+# ============================================================
+# ADMIN - RESCHEDULE CONFIRMED PARCEL
+# ============================================================
+
+@router.put(
+    "/admin/{parcel_id}/reschedule"
+)
+def reschedule_parcel(
+
+    parcel_id: str,
+
+    request: ParcelRescheduleRequest,
+
+    current_user=Depends(
+        get_current_user
+    )
+
+):
+
+    return ParcelService.reschedule_parcel(
+
+        parcel_id,
+
+        request
+
     )

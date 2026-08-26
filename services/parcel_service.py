@@ -16,7 +16,7 @@ from models.parcel_fare_model import ParcelFareCreate
 from models.parcel_model import (
     ParcelCreate,
     ParcelAllocateRequest,
-    ParcelRejectRequest
+    ParcelRejectRequest, ParcelRescheduleRequest
 )
 
 
@@ -1179,31 +1179,7 @@ class ParcelService:
                     )
                 )
 
-            if (
-                    request.agreedFare
-                    < parcel_fare["minFare"]
-            ):
 
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        f"Fare cannot be below "
-                        f"₹{parcel_fare['minFare']}"
-                    )
-                )
-
-            if (
-                    request.agreedFare
-                    > parcel_fare["maxFare"]
-            ):
-
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        f"Fare cannot exceed "
-                        f"₹{parcel_fare['maxFare']}"
-                    )
-                )
 
         # --------------------------------------------------------
         # Allocate Trip
@@ -1488,4 +1464,99 @@ class ParcelService:
 
             "parcelStatus":
                 "DELIVERED"
+        }
+
+    @staticmethod
+    def reschedule_parcel(
+            parcel_id: str,
+            request: ParcelRescheduleRequest
+    ):
+
+        parcel = ParcelRepository.find_by_id(parcel_id)
+
+        if not parcel:
+            raise HTTPException(
+                status_code=404,
+                detail="Parcel not found"
+            )
+
+        # ------------------------------------------------------------
+        # Only confirmed parcels can be rescheduled
+        # ------------------------------------------------------------
+
+        if parcel.get("parcelStatus") != "CONFIRMED":
+            raise HTTPException(
+                status_code=400,
+                detail="Only confirmed parcels can be rescheduled"
+            )
+
+        # ------------------------------------------------------------
+        # Get trip
+        # ------------------------------------------------------------
+
+        trip = TripRepository.find_by_id(
+            request.tripId
+        )
+
+        if not trip:
+            raise HTTPException(
+                status_code=404,
+                detail="Trip not found"
+            )
+
+        # ------------------------------------------------------------
+        # Validate route
+        # ------------------------------------------------------------
+
+        parcel_route_id = parcel.get("routeId")
+
+        trip_route_id = trip.get("routeId")
+
+        if (
+                parcel_route_id
+                and trip_route_id
+                and parcel_route_id != trip_route_id
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Selected trip does not belong to parcel route"
+            )
+
+        # ------------------------------------------------------------
+        # Update trip and fare
+        # ------------------------------------------------------------
+
+        update_data = {
+
+            "tripId": request.tripId,
+
+            "actualDate": trip.get("date"),
+
+            "actualTime": trip.get("timeSlot"),
+
+            "agreedFare": request.agreedFare,
+
+            "updatedAt": datetime.utcnow().isoformat()
+        }
+
+        ParcelRepository.update(
+            parcel_id,
+            update_data
+        )
+
+        return {
+
+            "parcelId": parcel_id,
+
+            "parcelStatus": "CONFIRMED",
+
+            "tripId": request.tripId,
+
+            "agreedFare": request.agreedFare,
+
+            "actualDate": trip.get("date"),
+
+            "actualTime": trip.get("timeSlot"),
+
+            "message": "Parcel rescheduled successfully"
         }
