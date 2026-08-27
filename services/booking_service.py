@@ -399,18 +399,18 @@ class BookingService:
                 detail="Trip not found"
             )
 
-        available = (
-            TripService
-            .calculate_available_seats(
-                trip
-            )
-        )
-
-        if booking["passengerCount"] > available:
-            raise HTTPException(
-                status_code=400,
-                detail="Not enough seats available"
-            )
+        # available = (
+        #     TripService
+        #     .calculate_available_seats(
+        #         trip
+        #     )
+        # )
+        #
+        # if booking["passengerCount"] > available:
+        #     raise HTTPException(
+        #         status_code=400,
+        #         detail="Not enough seats available"
+        #     )
 
         bookings_collection.update_one(
             {
