@@ -15,7 +15,8 @@ class ParcelCreate(BaseModel):
     weight: float
 
     note: str = ""
-
+    contactPersonName: str
+    contactPersonPhone: str
 
 class ParcelAllocateRequest(BaseModel):
 
@@ -62,6 +63,8 @@ class Parcel(BaseModel):
     createdAt: str
 
     updatedAt: Optional[str] = None
+    contactPersonName: str
+    contactPersonPhone: str
 
 class ParcelRescheduleRequest(BaseModel):
 

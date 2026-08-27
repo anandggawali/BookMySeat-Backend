@@ -588,7 +588,17 @@ class ParcelService:
                         "weight category"
                     )
                 )
+        if not request.contactPersonPhone.isdigit():
+            raise HTTPException(
+                status_code=400,
+                detail="Contact phone number must contain only digits"
+            )
 
+        if len(request.contactPersonPhone) != 10:
+            raise HTTPException(
+                status_code=400,
+                detail="Contact phone number must be 10 digits"
+            )
         # --------------------------------------------------------
         # Create Parcel
         # --------------------------------------------------------
