@@ -16,7 +16,8 @@ from models.parcel_fare_model import ParcelFareCreate
 from models.parcel_model import (
     ParcelCreate,
     ParcelAllocateRequest,
-    ParcelRejectRequest, ParcelRescheduleRequest
+    ParcelRejectRequest,
+    ParcelRescheduleRequest
 )
 
 
@@ -80,14 +81,6 @@ class ParcelService:
 
     # ============================================================
     # PARCEL FARE
-    #
-    # Fare belongs to:
-    #
-    # routeId
-    # direction (UP / DOWN)
-    # weightCategoryId
-    #
-    # NOT tripId
     # ============================================================
 
     @staticmethod
@@ -135,12 +128,6 @@ class ParcelService:
 
         # --------------------------------------------------------
         # Get actual route string
-        #
-        # UP:
-        # Pune(kharadi)-Rahuri-ShriRampur
-        #
-        # DOWN:
-        # ShriRampur-Rahuri-Pune(kharadi)
         # --------------------------------------------------------
 
         if direction == "UP":
@@ -211,10 +198,6 @@ class ParcelService:
 
         # --------------------------------------------------------
         # Check Duplicate
-        #
-        # One fare configuration for:
-        #
-        # route + direction + weight category
         # --------------------------------------------------------
 
         existing = (
@@ -381,7 +364,6 @@ class ParcelService:
                 "direction":
                     fare["direction"],
 
-                # Actual route string
                 "route":
                     route_value,
 
@@ -391,7 +373,6 @@ class ParcelService:
                         ""
                     ),
 
-                # Weight category
                 "weightCategoryId":
                     fare["weightCategoryId"],
 
@@ -412,7 +393,6 @@ class ParcelService:
                         "maxWeight"
                     ),
 
-                # Fare
                 "minFare":
                     fare["minFare"],
 
@@ -438,6 +418,10 @@ class ParcelService:
             user_id
     ):
 
+        # --------------------------------------------------------
+        # Find User
+        # --------------------------------------------------------
+
         user = UserRepository.find_by_id(
             user_id
         )
@@ -447,6 +431,55 @@ class ParcelService:
             raise HTTPException(
                 status_code=404,
                 detail="User not found"
+            )
+
+        # --------------------------------------------------------
+        # Validate Contact Person Name
+        # --------------------------------------------------------
+
+        contact_person_name = (
+            request.contactPersonName.strip()
+        )
+
+        if not contact_person_name:
+
+            raise HTTPException(
+                status_code=400,
+                detail="Contact person name is required"
+            )
+
+        # --------------------------------------------------------
+        # Validate Contact Person Phone
+        # --------------------------------------------------------
+
+        contact_person_phone = (
+            request.contactPersonPhone.strip()
+        )
+
+        if not contact_person_phone:
+
+            raise HTTPException(
+                status_code=400,
+                detail="Contact person phone number is required"
+            )
+
+        if not contact_person_phone.isdigit():
+
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Contact phone number must contain "
+                    "only digits"
+                )
+            )
+
+        if len(contact_person_phone) != 10:
+
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Contact phone number must be 10 digits"
+                )
             )
 
         # --------------------------------------------------------
@@ -588,17 +621,7 @@ class ParcelService:
                         "weight category"
                     )
                 )
-        if not request.contactPersonPhone.isdigit():
-            raise HTTPException(
-                status_code=400,
-                detail="Contact phone number must contain only digits"
-            )
 
-        if len(request.contactPersonPhone) != 10:
-            raise HTTPException(
-                status_code=400,
-                detail="Contact phone number must be 10 digits"
-            )
         # --------------------------------------------------------
         # Create Parcel
         # --------------------------------------------------------
@@ -613,14 +636,26 @@ class ParcelService:
             "userId":
                 user_id,
 
+            # ----------------------------------------------------
+            # Parcel Contact Details
+            # ----------------------------------------------------
+
+            "contactPersonName":
+                contact_person_name,
+
+            "contactPersonPhone":
+                contact_person_phone,
+
             "parcelFareId":
                 request.parcelFareId,
 
             "weightCategoryId":
                 request.weightCategoryId,
 
-            # Direction will be determined from
-            # selected parcel fare
+            # ----------------------------------------------------
+            # Route
+            # ----------------------------------------------------
+
             "routeId":
                 parcel_fare.get(
                     "routeId"
@@ -635,9 +670,16 @@ class ParcelService:
                 if parcel_fare
                 else None,
 
+            # ----------------------------------------------------
             # Trip allocated later by admin
+            # ----------------------------------------------------
+
             "tripId":
                 None,
+
+            # ----------------------------------------------------
+            # Parcel Details
+            # ----------------------------------------------------
 
             "expectedDate":
                 request.expectedDate,
@@ -655,7 +697,13 @@ class ParcelService:
                 request.weight,
 
             "note":
-                request.note,
+                request.note.strip()
+                if request.note
+                else "",
+
+            # ----------------------------------------------------
+            # Fare / Status
+            # ----------------------------------------------------
 
             "agreedFare":
                 None,
@@ -699,8 +747,14 @@ class ParcelService:
 
                     body=(
                         f"{user.get('name', 'User')}\n"
-                        f"Parcel: {request.parcelType}\n"
-                        f"Weight: {request.weight} KG\n"
+                        f"Contact: "
+                        f"{contact_person_name}\n"
+                        f"Phone: "
+                        f"{contact_person_phone}\n"
+                        f"Parcel: "
+                        f"{request.parcelType}\n"
+                        f"Weight: "
+                        f"{request.weight} KG\n"
                         f"Expected Date: "
                         f"{request.expectedDate}"
                     ),
@@ -718,6 +772,10 @@ class ParcelService:
                 "Parcel notification failed:",
                 str(e)
             )
+
+        # --------------------------------------------------------
+        # Response
+        # --------------------------------------------------------
 
         return {
 
@@ -797,8 +855,32 @@ class ParcelService:
 
             response.append({
 
+                # ------------------------------------------------
+                # Parcel ID
+                # ------------------------------------------------
+
                 "parcelId":
                     parcel["parcelId"],
+
+                # ------------------------------------------------
+                # Contact Person Details
+                # ------------------------------------------------
+
+                "contactPersonName":
+                    parcel.get(
+                        "contactPersonName",
+                        ""
+                    ),
+
+                "contactPersonPhone":
+                    parcel.get(
+                        "contactPersonPhone",
+                        ""
+                    ),
+
+                # ------------------------------------------------
+                # Parcel Details
+                # ------------------------------------------------
 
                 "parcelType":
                     parcel.get(
@@ -825,15 +907,9 @@ class ParcelService:
                         ""
                     ),
 
-                "actualDate":
-                    parcel.get(
-                        "actualDate"
-                    ),
-
-                "actualTime":
-                    parcel.get(
-                        "actualTime"
-                    ),
+                # ------------------------------------------------
+                # Route
+                # ------------------------------------------------
 
                 "routeId":
                     parcel.get(
@@ -846,10 +922,28 @@ class ParcelService:
                 "route":
                     route_value,
 
+                # ------------------------------------------------
+                # Trip
+                # ------------------------------------------------
+
                 "tripId":
                     parcel.get(
                         "tripId"
                     ),
+
+                "actualDate":
+                    parcel.get(
+                        "actualDate"
+                    ),
+
+                "actualTime":
+                    parcel.get(
+                        "actualTime"
+                    ),
+
+                # ------------------------------------------------
+                # Fare / Status
+                # ------------------------------------------------
 
                 "agreedFare":
                     parcel.get(
@@ -865,6 +959,12 @@ class ParcelService:
                 "rejectionReason":
                     parcel.get(
                         "rejectionReason",
+                        ""
+                    ),
+
+                "note":
+                    parcel.get(
+                        "note",
                         ""
                     )
             })
@@ -884,12 +984,20 @@ class ParcelService:
 
         for parcel in parcels:
 
+            # ----------------------------------------------------
+            # Registered User
+            # ----------------------------------------------------
+
             user = (
                 UserRepository
                 .find_by_id(
                     parcel.get("userId")
                 )
             )
+
+            # ----------------------------------------------------
+            # Trip
+            # ----------------------------------------------------
 
             trip = None
 
@@ -902,6 +1010,10 @@ class ParcelService:
                     )
                 )
 
+            # ----------------------------------------------------
+            # Weight Category
+            # ----------------------------------------------------
+
             category = (
                 WeightCategoryRepository
                 .find_by_id(
@@ -910,6 +1022,10 @@ class ParcelService:
                     )
                 )
             )
+
+            # ----------------------------------------------------
+            # Route
+            # ----------------------------------------------------
 
             route = None
 
@@ -937,12 +1053,24 @@ class ParcelService:
                     ""
                 )
 
+            # ----------------------------------------------------
+            # Admin Response
+            # ----------------------------------------------------
+
             response.append({
+
+                # =================================================
+                # PARCEL
+                # =================================================
 
                 "parcelId":
                     parcel.get(
                         "parcelId"
                     ),
+
+                # =================================================
+                # REGISTERED USER DETAILS
+                # =================================================
 
                 "userId":
                     parcel.get(
@@ -954,15 +1082,36 @@ class ParcelService:
                         "name",
                         "Unknown User"
                     )
-                    if user else
-                    "Unknown User",
+                    if user
+                    else "Unknown User",
 
                 "mobileNumber":
                     user.get(
                         "phoneNo",
                         ""
                     )
-                    if user else "",
+                    if user
+                    else "",
+
+                # =================================================
+                # PARCEL CONTACT PERSON DETAILS
+                # =================================================
+
+                "contactPersonName":
+                    parcel.get(
+                        "contactPersonName",
+                        ""
+                    ),
+
+                "contactPersonPhone":
+                    parcel.get(
+                        "contactPersonPhone",
+                        ""
+                    ),
+
+                # =================================================
+                # PARCEL DETAILS
+                # =================================================
 
                 "parcelType":
                     parcel.get(
@@ -981,13 +1130,28 @@ class ParcelService:
                         "categoryName",
                         ""
                     )
-                    if category else "",
+                    if category
+                    else "",
+
+                "note":
+                    parcel.get(
+                        "note",
+                        ""
+                    ),
+
+                # =================================================
+                # EXPECTED DATE
+                # =================================================
 
                 "expectedDate":
                     parcel.get(
                         "expectedDate",
                         ""
                     ),
+
+                # =================================================
+                # ROUTE
+                # =================================================
 
                 "routeId":
                     parcel.get(
@@ -999,6 +1163,10 @@ class ParcelService:
 
                 "route":
                     route_value,
+
+                # =================================================
+                # TRIP
+                # =================================================
 
                 "tripId":
                     parcel.get(
@@ -1015,20 +1183,22 @@ class ParcelService:
                         "actualTime"
                     ),
 
+                # =================================================
+                # FARE
+                # =================================================
+
                 "agreedFare":
                     parcel.get(
                         "agreedFare"
                     ),
 
+                # =================================================
+                # STATUS
+                # =================================================
+
                 "parcelStatus":
                     parcel.get(
                         "parcelStatus",
-                        ""
-                    ),
-
-                "note":
-                    parcel.get(
-                        "note",
                         ""
                     ),
 
@@ -1189,7 +1359,31 @@ class ParcelService:
                     )
                 )
 
+        # --------------------------------------------------------
+        # Validate Agreed Fare
+        # --------------------------------------------------------
 
+        if parcel_fare:
+
+            if request.agreedFare < parcel_fare["minFare"]:
+
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "Agreed fare cannot be less than "
+                        "minimum parcel fare"
+                    )
+                )
+
+            if request.agreedFare > parcel_fare["maxFare"]:
+
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "Agreed fare cannot exceed "
+                        "maximum parcel fare"
+                    )
+                )
 
         # --------------------------------------------------------
         # Allocate Trip
@@ -1398,6 +1592,7 @@ class ParcelService:
             )
 
         if parcel["parcelStatus"] != "CONFIRMED":
+
             raise HTTPException(
                 status_code=400,
                 detail=(
@@ -1476,77 +1671,172 @@ class ParcelService:
                 "DELIVERED"
         }
 
+    # ============================================================
+    # ADMIN - RESCHEDULE PARCEL
+    # ============================================================
+
     @staticmethod
     def reschedule_parcel(
             parcel_id: str,
             request: ParcelRescheduleRequest
     ):
 
-        parcel = ParcelRepository.find_by_id(parcel_id)
+        parcel = ParcelRepository.find_by_id(
+            parcel_id
+        )
 
         if not parcel:
+
             raise HTTPException(
                 status_code=404,
                 detail="Parcel not found"
             )
 
-        # ------------------------------------------------------------
+        # --------------------------------------------------------
         # Only confirmed parcels can be rescheduled
-        # ------------------------------------------------------------
+        # --------------------------------------------------------
 
         if parcel.get("parcelStatus") != "CONFIRMED":
+
             raise HTTPException(
                 status_code=400,
                 detail="Only confirmed parcels can be rescheduled"
             )
 
-        # ------------------------------------------------------------
-        # Get trip
-        # ------------------------------------------------------------
+        # --------------------------------------------------------
+        # Get Trip
+        # --------------------------------------------------------
 
         trip = TripRepository.find_by_id(
             request.tripId
         )
 
         if not trip:
+
             raise HTTPException(
                 status_code=404,
                 detail="Trip not found"
             )
 
-        # ------------------------------------------------------------
-        # Validate route
-        # ------------------------------------------------------------
+        # --------------------------------------------------------
+        # Validate Route
+        # --------------------------------------------------------
 
-        parcel_route_id = parcel.get("routeId")
+        parcel_route_id = parcel.get(
+            "routeId"
+        )
 
-        trip_route_id = trip.get("routeId")
+        trip_route_id = trip.get(
+            "routeId"
+        )
 
         if (
                 parcel_route_id
                 and trip_route_id
                 and parcel_route_id != trip_route_id
         ):
+
             raise HTTPException(
                 status_code=400,
-                detail="Selected trip does not belong to parcel route"
+                detail=(
+                    "Selected trip does not belong "
+                    "to parcel route"
+                )
             )
 
-        # ------------------------------------------------------------
-        # Update trip and fare
-        # ------------------------------------------------------------
+        # --------------------------------------------------------
+        # Validate Direction
+        # --------------------------------------------------------
+
+        parcel_direction = parcel.get(
+            "direction"
+        )
+
+        trip_direction = trip.get(
+            "direction"
+        )
+
+        if (
+                parcel_direction
+                and trip_direction
+                and parcel_direction.upper()
+                != trip_direction.upper()
+        ):
+
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Selected trip direction does not "
+                    "match parcel direction"
+                )
+            )
+
+        # --------------------------------------------------------
+        # Validate Fare Against Parcel Fare
+        # --------------------------------------------------------
+
+        parcel_fare = None
+
+        if parcel.get(
+                "parcelFareId"
+        ):
+
+            parcel_fare = (
+                ParcelFareRepository
+                .find_by_id(
+                    parcel["parcelFareId"]
+                )
+            )
+
+        if parcel_fare:
+
+            if request.agreedFare < parcel_fare["minFare"]:
+
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "Agreed fare cannot be less than "
+                        "minimum parcel fare"
+                    )
+                )
+
+            if request.agreedFare > parcel_fare["maxFare"]:
+
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "Agreed fare cannot exceed "
+                        "maximum parcel fare"
+                    )
+                )
+
+        # --------------------------------------------------------
+        # Update Trip and Fare
+        # --------------------------------------------------------
 
         update_data = {
 
-            "tripId": request.tripId,
+            "tripId":
+                request.tripId,
 
-            "actualDate": trip.get("date"),
+            "actualDate":
+                trip.get(
+                    "date"
+                ),
 
-            "actualTime": trip.get("timeSlot"),
+            "actualTime":
+                trip.get(
+                    "timeSlot"
+                ),
 
-            "agreedFare": request.agreedFare,
+            "agreedFare":
+                request.agreedFare,
 
-            "updatedAt": datetime.utcnow().isoformat()
+            "parcelStatus":
+                "CONFIRMED",
+
+            "updatedAt":
+                datetime.utcnow().isoformat()
         }
 
         ParcelRepository.update(
@@ -1554,19 +1844,34 @@ class ParcelService:
             update_data
         )
 
+        # --------------------------------------------------------
+        # Response
+        # --------------------------------------------------------
+
         return {
 
-            "parcelId": parcel_id,
+            "parcelId":
+                parcel_id,
 
-            "parcelStatus": "CONFIRMED",
+            "parcelStatus":
+                "CONFIRMED",
 
-            "tripId": request.tripId,
+            "tripId":
+                request.tripId,
 
-            "agreedFare": request.agreedFare,
+            "agreedFare":
+                request.agreedFare,
 
-            "actualDate": trip.get("date"),
+            "actualDate":
+                trip.get(
+                    "date"
+                ),
 
-            "actualTime": trip.get("timeSlot"),
+            "actualTime":
+                trip.get(
+                    "timeSlot"
+                ),
 
-            "message": "Parcel rescheduled successfully"
+            "message":
+                "Parcel rescheduled successfully"
         }
