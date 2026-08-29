@@ -1363,27 +1363,9 @@ class ParcelService:
         # Validate Agreed Fare
         # --------------------------------------------------------
 
-        if parcel_fare:
 
-            if request.agreedFare < parcel_fare["minFare"]:
 
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        "Agreed fare cannot be less than "
-                        "minimum parcel fare"
-                    )
-                )
 
-            if request.agreedFare > parcel_fare["maxFare"]:
-
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        "Agreed fare cannot exceed "
-                        "maximum parcel fare"
-                    )
-                )
 
         # --------------------------------------------------------
         # Allocate Trip
@@ -1788,27 +1770,6 @@ class ParcelService:
                 )
             )
 
-        if parcel_fare:
-
-            if request.agreedFare < parcel_fare["minFare"]:
-
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        "Agreed fare cannot be less than "
-                        "minimum parcel fare"
-                    )
-                )
-
-            if request.agreedFare > parcel_fare["maxFare"]:
-
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        "Agreed fare cannot exceed "
-                        "maximum parcel fare"
-                    )
-                )
 
         # --------------------------------------------------------
         # Update Trip and Fare
@@ -1843,7 +1804,79 @@ class ParcelService:
             parcel_id,
             update_data
         )
+        # --------------------------------------------------------
+        # Notify User
+        # --------------------------------------------------------
 
+        try:
+
+            from services.app_notification_service import (
+                AppNotificationService
+            )
+
+            # Get route information
+            route_text = ""
+
+            if trip.get("route"):
+                route_text = trip.get("route")
+
+            elif parcel.get("routeId"):
+
+                route = RouteRepository.find_by_id(
+                    parcel["routeId"]
+                )
+
+                if route:
+
+                    direction = parcel.get(
+                        "direction"
+                    )
+
+                    if direction == "UP":
+
+                        route_text = route.get(
+                            "up",
+                            ""
+                        )
+
+                    elif direction == "DOWN":
+
+                        route_text = route.get(
+                            "down",
+                            ""
+                        )
+
+            # ----------------------------------------------------
+            # Send notification
+            # ----------------------------------------------------
+
+            AppNotificationService.create_notification(
+
+                user_id=parcel["userId"],
+
+                title="Parcel Trip Rescheduled",
+
+                body=(
+                    "Your parcel trip has been rescheduled.\n"
+                    f"{route_text}\n"
+                    f"New Date: {trip.get('date', '')}\n"
+                    f"New Time: {trip.get('timeSlot', '')}\n"
+                    f"Fare: ₹{request.agreedFare}"
+                ),
+
+                type="PARCEL_RESCHEDULED",
+
+                click_action="OPEN_PARCEL",
+
+                color="#FF9800"
+            )
+
+        except Exception as e:
+
+            print(
+                "Parcel reschedule notification failed:",
+                str(e)
+            )
         # --------------------------------------------------------
         # Response
         # --------------------------------------------------------
