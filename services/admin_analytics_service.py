@@ -5,7 +5,7 @@ from repositories.trip_repository import TripRepository
 from repositories.booking_repository import BookingRepository
 from repositories.parcel_repository import ParcelRepository
 from repositories.route_repository import RouteRepository
-
+from typing import Optional
 
 class AdminAnalyticsService:
 
@@ -16,8 +16,8 @@ class AdminAnalyticsService:
     @staticmethod
     def get_summary(
         period: str = "today",
-        year: int | None = None,
-        month: int | None = None
+            year: Optional[int] = None,
+            month: Optional[int] = None
     ):
 
         # =====================================================
@@ -1338,8 +1338,8 @@ class AdminAnalyticsService:
     @staticmethod
     def get_date_range(
         period: str,
-        year: int | None = None,
-        month: int | None = None
+            year: Optional[int] = None,
+            month: Optional[int] = None
     ):
 
         today = date.today()
