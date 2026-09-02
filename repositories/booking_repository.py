@@ -55,3 +55,13 @@ class BookingRepository:
                 "tripId": trip_id
             })
         )
+
+        # =========================================
+        # ANALYTICS
+        # =========================================
+
+    @staticmethod
+    def get_all_bookings_for_analytics():
+        return list(
+            bookings_collection.find({})
+        )

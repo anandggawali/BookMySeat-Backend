@@ -14,6 +14,12 @@ class TripRepository:
                 {"status": "OPEN"}
             )
         )
+
+    @staticmethod
+    def get_all_trips_for_analytics():
+        return list(
+            trips_collection.find({})
+        )
     @staticmethod
     def find_by_id(trip_id: str):
         return trips_collection.find_one(

@@ -1,6 +1,14 @@
 from fastapi import APIRouter
 from fastapi import Depends
-from fastapi import HTTPException
+
+from typing import Optional
+
+from fastapi import HTTPException, Query
+
+
+from services.admin_analytics_service import (
+    AdminAnalyticsService
+)
 
 from dependencies.auth_dependency import get_current_user
 from schemas.booking_schema import RejectBookingRequest
@@ -77,3 +85,63 @@ def reject_booking(
         booking_id,
         request.reason
     )
+
+
+@router.get(
+    "/analytics/summary"
+)
+def get_admin_analytics(
+
+    period: str = Query(
+        default="today"
+    ),
+
+    year: Optional[int] = Query(
+        default=None
+    ),
+
+    month: Optional[int] = Query(
+        default=None
+    )
+):
+
+    try:
+
+        return (
+            AdminAnalyticsService
+            .get_summary(
+                period=period,
+                year=year,
+                month=month
+            )
+        )
+
+    except ValueError as error:
+
+        raise HTTPException(
+            status_code=400,
+            detail=str(error)
+        )
+
+    except Exception as error:
+
+        print(
+            "================================="
+        )
+
+        print(
+            "ADMIN ANALYTICS ERROR"
+        )
+
+        print(
+            str(error)
+        )
+
+        print(
+            "================================="
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to load admin analytics"
+        )
