@@ -24,19 +24,54 @@ class BookingService:
             user_id
     ):
 
+        print("========== CREATE BOOKING START ==========")
+        print("User ID:", user_id)
+        print("Trip ID:", request.tripId)
+        print("Booking Type:", request.bookingType)
+        print("Passenger Count:", request.passengerCount)
+        print("Parcel Count:", request.parcelCount)
+
+        # -------------------------------------------------
+        # GET TRIP
+        # -------------------------------------------------
+
         trip = TripRepository.find_by_id(
             request.tripId
         )
-        user = UserRepository.find_by_id(user_id)
+
         if not trip:
             raise HTTPException(
                 status_code=404,
                 detail="Trip not found"
             )
 
-        # Ride / Parcel validation
+        # -------------------------------------------------
+        # GET USER
+        # -------------------------------------------------
 
-        if request.bookingType == "RIDE":
+        user = UserRepository.find_by_id(
+            user_id
+        )
+
+        if not user:
+            raise HTTPException(
+                status_code=404,
+                detail="User not found"
+            )
+
+        # -------------------------------------------------
+        # NORMALIZE BOOKING TYPE
+        # -------------------------------------------------
+
+        booking_type = (
+                request.bookingType or "RIDE"
+        ).strip().upper()
+
+        # -------------------------------------------------
+        # RIDE VALIDATION
+        # -------------------------------------------------
+
+        if booking_type == "RIDE":
 
             if request.passengerCount <= 0:
                 raise HTTPException(
@@ -44,7 +79,11 @@ class BookingService:
                     detail="Passenger count must be greater than 0"
                 )
 
-        elif request.bookingType == "PARCEL":
+        # -------------------------------------------------
+        # PARCEL VALIDATION
+        # -------------------------------------------------
+
+        elif booking_type == "PARCEL":
 
             if request.parcelCount <= 0:
                 raise HTTPException(
@@ -59,10 +98,22 @@ class BookingService:
                 detail="Invalid booking type"
             )
 
-        # Booking allowed only within next 3 days
-        trip_date = date.fromisoformat(
-            trip["date"]
-        )
+        # -------------------------------------------------
+        # DATE VALIDATION
+        # -------------------------------------------------
+
+        try:
+
+            trip_date = date.fromisoformat(
+                trip["date"]
+            )
+
+        except Exception:
+
+            raise HTTPException(
+                status_code=500,
+                detail="Invalid trip date format"
+            )
 
         if trip_date > (
                 date.today()
@@ -73,102 +124,273 @@ class BookingService:
                 detail="Booking allowed only within next 3 days"
             )
 
-        # Calculate available seats (for information only)
-        available = TripService.calculate_available_seats(trip)
+        # -------------------------------------------------
+        # AVAILABLE SEATS
+        # -------------------------------------------------
 
-        # Overbooking is allowed.
-        # No validation here. Admin can arrange an additional vehicle if required.
+        try:
 
+            available = TripService.calculate_available_seats(
+                trip
+            )
 
-        # if request.passengerCount > available:
-        #     raise HTTPException(
-        #         status_code=400,
-        #         detail="Not enough seats available"
-        #     )
+        except Exception as e:
 
-        quantity = (
-            request.passengerCount
-            if request.bookingType == "RIDE"
-            else request.parcelCount
+            print(
+                "ERROR calculating available seats:",
+                repr(e)
+            )
+
+            # Fallback so booking creation does not crash
+            available = trip.get(
+                "totalSeats",
+                0
+            )
+
+        # -------------------------------------------------
+        # QUANTITY
+        # -------------------------------------------------
+
+        if booking_type == "RIDE":
+
+            quantity = request.passengerCount
+
+        else:
+
+            quantity = request.parcelCount
+
+        # -------------------------------------------------
+        # FARE
+        # -------------------------------------------------
+
+        try:
+
+            fare = float(
+                trip.get("fare", 0)
+            )
+
+        except Exception:
+
+            raise HTTPException(
+                status_code=500,
+                detail="Invalid trip fare"
+            )
+
+        total_fare = fare * quantity
+
+        # -------------------------------------------------
+        # BOOKING ID
+        # -------------------------------------------------
+
+        booking_id = str(
+            uuid.uuid4()
         )
 
-        total_fare = trip["fare"] * quantity
+        # -------------------------------------------------
+        # SAFE USER DATA
+        # -------------------------------------------------
+
+        mobile_number = user.get(
+            "phoneNo",
+            ""
+        )
+
+        user_name = user.get(
+            "name",
+            "User"
+        )
+
+        # -------------------------------------------------
+        # CREATE BOOKING
+        # -------------------------------------------------
 
         booking = {
 
-            "bookingId": str(uuid.uuid4()),
+            "bookingId": booking_id,
 
             "tripId": request.tripId,
 
             "userId": user_id,
 
-            "mobileNumber":
-                user.get("phoneNo", "")
-                if user else "",
+            "mobileNumber": mobile_number,
 
-            "bookingType": request.bookingType,
+            "bookingType": booking_type,
 
             # Ride
-            "passengerCount": request.passengerCount,
-            "gender": request.gender,
+            "passengerCount":
+                request.passengerCount
+                if booking_type == "RIDE"
+                else 0,
+
+            "gender":
+                request.gender
+                if booking_type == "RIDE"
+                else "",
 
             # Parcel
-            "parcelCount": request.parcelCount,
-            "parcelType": request.parcelType,
-            "parcelWeight": request.parcelWeight,
+            "parcelCount":
+                request.parcelCount
+                if booking_type == "PARCEL"
+                else 0,
+
+            "parcelType":
+                request.parcelType
+                if booking_type == "PARCEL"
+                else "",
+
+            "parcelWeight":
+                request.parcelWeight
+                if booking_type == "PARCEL"
+                else "",
 
             # Common
-            "note": request.note,
+            "note":
+                request.note or "",
 
-            "totalFare": total_fare,
+            "totalFare":
+                total_fare,
 
-            "availableSeatsAtBooking": available,
+            "availableSeatsAtBooking":
+                available,
 
-            "bookingStatus": "PENDING",
+            "bookingStatus":
+                "PENDING",
 
-            "isOverBooking": available < quantity
-
+            "isOverBooking":
+                available < quantity
+                if booking_type == "RIDE"
+                else False
         }
 
-        BookingRepository.save(
-            booking
-        )
-        admins = UserRepository.get_admins()
+        # -------------------------------------------------
+        # SAVE BOOKING
+        # -------------------------------------------------
 
-        for admin in admins:
-            AppNotificationService.create_notification(
+        try:
 
-                user_id=admin["userId"],
-
-                title="New Booking Request",
-
-                body=(
-                    f"{user['name']}\n"
-                    f"{trip['route']}\n"
-                    f"{trip['date']} • {trip['timeSlot']}\n"
-                    f"Passengers: {request.passengerCount}"
-                    if request.bookingType == "RIDE"
-                    else f"Parcels: {request.parcelCount}"
-
-                ),
-
-                type="BOOKING",
-
-                click_action="MANAGE_BOOKINGS",
-
-                color="#2962FF"
-
+            result = BookingRepository.save(
+                booking
             )
+
+            print(
+                "BOOKING SAVED SUCCESSFULLY:",
+                booking_id
+            )
+
+        except Exception as e:
+
+            print(
+                "========== BOOKING DATABASE ERROR =========="
+            )
+            print(
+                repr(e)
+            )
+
+            raise HTTPException(
+                status_code=500,
+                detail="Unable to save booking"
+            )
+
+        # -------------------------------------------------
+        # ADMIN NOTIFICATION
+        #
+        # IMPORTANT:
+        # Notification failure must NOT make
+        # booking creation return HTTP 500.
+        # -------------------------------------------------
+
+        try:
+
+            admins = UserRepository.get_admins()
+
+            print(
+                "ADMIN COUNT:",
+                len(admins)
+            )
+
+            for admin in admins:
+
+                try:
+
+                    if booking_type == "RIDE":
+
+                        notification_body = (
+                            f"{user_name}\n"
+                            f"{trip.get('route', '')}\n"
+                            f"{trip.get('date', '')} • "
+                            f"{trip.get('timeSlot', '')}\n"
+                            f"Passengers: "
+                            f"{request.passengerCount}"
+                        )
+
+                    else:
+
+                        notification_body = (
+                            f"{user_name}\n"
+                            f"{trip.get('route', '')}\n"
+                            f"{trip.get('date', '')} • "
+                            f"{trip.get('timeSlot', '')}\n"
+                            f"Parcels: "
+                            f"{request.parcelCount}"
+                        )
+
+                    AppNotificationService.create_notification(
+
+                        user_id=admin["userId"],
+
+                        title="New Booking Request",
+
+                        body=notification_body,
+
+                        type="BOOKING",
+
+                        click_action="MANAGE_BOOKINGS",
+
+                        color="#2962FF"
+                    )
+
+                    print(
+                        "Admin notification sent:",
+                        admin.get("userId")
+                    )
+
+                except Exception as notification_error:
+
+                    print(
+                        "ADMIN NOTIFICATION ERROR:",
+                        repr(notification_error)
+                    )
+
+                    # DO NOT raise here
+
+        except Exception as notification_error:
+
+            print(
+                "NOTIFICATION SYSTEM ERROR:",
+                repr(notification_error)
+            )
+
+            # DO NOT raise here
+
+        # -------------------------------------------------
+        # SUCCESS
+        # -------------------------------------------------
+
+        print(
+            "========== CREATE BOOKING SUCCESS =========="
+        )
 
         return {
 
-            "bookingId": booking["bookingId"],
+            "bookingId":
+                booking["bookingId"],
 
-            "bookingStatus": booking["bookingStatus"],
+            "bookingStatus":
+                booking["bookingStatus"],
 
-            "totalFare": booking["totalFare"]
+            "totalFare":
+                booking["totalFare"]
         }
-
 
 
 
