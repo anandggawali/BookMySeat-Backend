@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 import core.firebase
+from fastapi.middleware.cors import CORSMiddleware
 
 from routes.auth_routes import router as auth_router
 from routes.trip_routes import router as trip_router
@@ -15,6 +16,15 @@ from routes.parcel_routes import router as parcel_router
 app = FastAPI(
     title="Book My Seat API",
     version="1.0.0"
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(auth_router)
