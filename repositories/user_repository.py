@@ -169,7 +169,23 @@ class UserRepository:
                 }
             )
         )
-
+    @staticmethod
+    def get_vendors():
+        return list(
+            users_collection.find(
+                {
+                    "role": "VENDOR"
+                },
+                {
+                    "_id": 0,
+                    "userId": 1,
+                    "name": 1,
+                    "phoneNo": 1,
+                    "email": 1,
+                    "role": 1
+                }
+            )
+        )
     @staticmethod
     def update_password(user_id: str, hashed_password: str):
         return users_collection.update_one(

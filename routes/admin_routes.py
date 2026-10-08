@@ -17,6 +17,9 @@ from schemas.trip_schema import CreateTripRequest
 
 from services.trip_service import TripService
 from services.booking_service import BookingService
+from schemas.shared_ride_schema import ShareBookingRequest
+from services.shared_ride_service import SharedRideService
+from repositories.user_repository import UserRepository
 
 router = APIRouter(
     prefix="/api/admin",
@@ -54,6 +57,28 @@ def get_all_bookings(
     validate_admin(current_user)
 
     return BookingService.get_all_bookings()
+
+@router.get("/vendors")
+def get_vendors(
+        current_user=Depends(get_current_user)
+):
+
+    validate_admin(current_user)
+
+    return UserRepository.get_vendors()
+
+@router.post("/shared-rides")
+def share_booking(
+        request: ShareBookingRequest,
+        current_user=Depends(get_current_user)
+):
+
+    validate_admin(current_user)
+
+    return SharedRideService.share_booking(
+        request,
+        current_user["userId"]
+    )
 
 @router.put(
     "/bookings/{booking_id}/confirm"

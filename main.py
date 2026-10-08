@@ -12,6 +12,7 @@ from routes.test_routes import router as test_router
 from routes.notification_routes import router as notification_router
 from routes.config_routes import router as configuration_router
 from routes.parcel_routes import router as parcel_router
+from routes.vendor_routes import router as vendor_router
 
 app = FastAPI(
     title="Book My Seat API",
@@ -21,6 +22,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
+        "http://80.225.211.192:3000",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -37,6 +39,7 @@ app.include_router(test_router)
 app.include_router(notification_router)
 app.include_router(configuration_router)
 app.include_router(parcel_router)
+app.include_router(vendor_router)
 # app.include_router(
 #     user_router,
 #     prefix="/api/users",

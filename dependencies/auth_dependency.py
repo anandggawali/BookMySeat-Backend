@@ -49,3 +49,15 @@ def get_current_user(
     print("DB Device:", user.get("deviceId"))
     print("JWT Device:", payload.get("deviceId"))
     return payload
+def get_current_vendor(
+        current_user=Depends(get_current_user)
+):
+
+    if current_user.get("role") != "VENDOR":
+
+        raise HTTPException(
+            status_code=403,
+            detail="Vendor access required"
+        )
+
+    return current_user

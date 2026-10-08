@@ -253,13 +253,20 @@ class BookingService:
             "availableSeatsAtBooking":
                 available,
 
-            "bookingStatus":
-                "PENDING",
 
-            "isOverBooking":
-                available < quantity
-                if booking_type == "RIDE"
-                else False
+
+    "bookingStatus":
+    "PENDING",
+
+    "fulfillmentType": "OWN",
+    "sharedRideId": None,
+
+    "isOverBooking":
+    available < quantity
+    if booking_type == "RIDE"
+    else False
+
+       
         }
 
         # -------------------------------------------------

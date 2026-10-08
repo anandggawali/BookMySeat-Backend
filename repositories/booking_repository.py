@@ -56,6 +56,24 @@ class BookingRepository:
             })
         )
 
+    @staticmethod
+    def update_fulfillment(
+            booking_id: str,
+            fulfillment_type: str,
+            shared_ride_id
+    ):
+
+        return bookings_collection.update_one(
+            {
+                "bookingId": booking_id
+            },
+            {
+                "$set": {
+                    "fulfillmentType": fulfillment_type,
+                    "sharedRideId": shared_ride_id
+                }
+            }
+        )
         # =========================================
         # ANALYTICS
         # =========================================

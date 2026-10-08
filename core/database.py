@@ -26,6 +26,8 @@ weight_categories_collection = db["weight_categories"]
 parcel_fares_collection = db["parcel_fares"]
 
 parcels_collection = db["parcels"]
+
+shared_rides_collection = db["shared_rides"]
 # config_collection = db["configuration"]
 #
 # rejection_collection = db["reject_reason"]
